@@ -1,9 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-#import seaborn as sns
+import seaborn as sns
 
 
-def plot_histograms(data, num_cols, bins=10, figsize=(10, 5)):
+def plot_histograms(data, num_cols, bins=10, figsize=(4, 2)):
      """
      Plots histograms for specified numerical columns in a DataFrame.
     """
@@ -15,12 +15,10 @@ def plot_histograms(data, num_cols, bins=10, figsize=(10, 5)):
        plt.title(f'Histogram of {col}')
        plt.show()
 
-
 def plot_bar_charts(df, cat_cols, figsize=(10, 5)):
   """
   Plots bar charts for specified categorical columns in a DataFrame.
   """
-
   for col in cat_cols:
     # Check if the column is categorical
     if df[col].dtype == 'object' or df[col].dtype == 'category': 
@@ -76,38 +74,32 @@ def plot_correlation_matrix(data, group_col, value_cols):
         print(f"Column '{group_col}' not found in data.")
     
 
-def plot_monthly_changes_by_zipcode(df):
-     """
-     Plots scatter plots to explore relationships between monthly changes 
-     in TotalPremium and TotalClaims as a function of PostalCode.
-     """
-  # Group by ZipCode and Month, calculate monthly changes
-     grouped = df.groupby(['PostalCode', pd.Grouper(key='Month', freq='M')]) 
-     grouped = grouped.agg({'TotalPremium': 'sum', 'TotalClaim': 'sum'})
-     grouped = grouped.reset_index()
+# Function to calculate changes over time
+def calculate_changes(df, group_by_columns, value_column):
+    """
+    Calculates the percentage change for a given value column, grouped by specific columns.
+    """
+    grouped = df.groupby(group_by_columns)[value_column].sum().unstack()
+    changes = grouped.pct_change(axis=1).stack().reset_index()
+    changes.columns = group_by_columns + [f"{value_column}_change"]
+    return changes
 
-     # Calculate monthly changes
-     grouped['Prev_Month_TotalPremium'] = grouped.groupby('PostalCode')['TotalPremium'].shift(1)
-     grouped['Prev_Month_TotalClaim'] = grouped.groupby('PostalCode')['TotalClaim'].shift(1)
+# Function to plot trends over geography
+def plot_trends(df, geography_col, trend_col, change_col, title):
+    """
+    Plots trends in percentage change over geography.
+    """
+    plt.figure(figsize=(12, 6))
+    sns.lineplot(data=df, x=geography_col, y=change_col, hue=trend_col, marker="o")
+    plt.title(title)
+    plt.xlabel(geography_col)
+    plt.ylabel("Percentage Change")
+    plt.legend(title=trend_col)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
-     grouped['Monthly_Premium_Change'] = grouped['TotalPremium'] - grouped['Prev_Month_TotalPremium']
-     grouped['Monthly_Claim_Change'] = grouped['TotalClaim'] - grouped['Prev_Month_TotalClaim']
-
-     # Filter out rows with missing values for change calculations
-     grouped = grouped.dropna(subset=['Monthly_Premium_Change', 'Monthly_Claim_Change'])
-
-     # Create scatter plots for each ZipCode
-     unique_zipcodes = grouped['PostalCode'].unique()
-     for zipcode in unique_zipcodes:
-         zipcode_data = grouped[grouped['PostalCode'] == zipcode]
-         plt.figure(figsize=(8, 6))
-         plt.scatter(zipcode_data['Monthly_Premium_Change'], zipcode_data['Monthly_Claim_Change'])
-         plt.title(f'Monthly Changes in TotalPremium vs. TotalClaim for PostalCodee: {zipcode}')
-         plt.xlabel('Monthly Change in TotalPremium')
-         plt.ylabel('Monthly Change in TotalClaim')
-         plt.grid(True)
-         plt.show()
-
+    
 def detect_outliers(data, numerical_columns):
     """
     Detect outliers in numerical columns using box plots.

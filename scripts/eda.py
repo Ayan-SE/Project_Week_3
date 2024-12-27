@@ -6,9 +6,7 @@ import numpy as np
 def calculate_variability(data, features):
      """
       Calculates the variability of numerical features in a DataFrame.
-
      """
-     
      variability= pd.DataFrame(index=features)
      variability['variance'] = data[features].var()
      variability['std_dev'] = data[features].std()
@@ -20,7 +18,6 @@ def calculate_variability(data, features):
 def check_missing_values(data):
   """
   Checks for missing values in a pandas DataFrame and provides a summary.
-
   """
   missing_values = pd.DataFrame(index=data.columns)
   missing_values['Missing Count'] = data.isnull().sum()
